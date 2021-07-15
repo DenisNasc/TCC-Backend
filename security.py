@@ -16,6 +16,6 @@ def authenticate(username, password):
 
 def identity(payload):
     # extract the user id from that payload
-    user = User.query.filter_by(id == payload["identity"]).first()
+    user = User.query.filter_by(id=payload["identity"]).first()
 
     return user

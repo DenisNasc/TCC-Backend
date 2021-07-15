@@ -6,13 +6,16 @@ db = g.db
 # /users/<id>/projects/<id>
 class Project(db.Model):
     __tablename__ = "projects"
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    id = db.Column(db.String(64), primary_key=True)
+    userID = db.Column(db.String(64), db.ForeignKey("users.id"), nullable=False)
     stations = db.relationship("Station", backref="station")
 
     name = db.Column(db.String(64), nullable=False, unique=True)
-    length_overall = db.Column(db.Float(precision=4), nullable=False)
-    length_perpendiculars = db.Column(db.Float(precision=4), nullable=False)
+    engineer = db.Column(db.String(64), nullable=True, unique=False)
+    shipyard = db.Column(db.String(64), nullable=True, unique=False)
+
+    lengthOverall = db.Column(db.Float(precision=4), nullable=False)
+    lengthPerpendiculars = db.Column(db.Float(precision=4), nullable=False)
     breadth = db.Column(db.Float(precision=4), nullable=False)
     draft = db.Column(db.Float(precision=4), nullable=False)
 

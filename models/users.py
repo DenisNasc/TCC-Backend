@@ -6,12 +6,10 @@ db = g.db
 # /users/<id>
 class User(db.Model):
     __tablename__ = "users"
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.String(64), unique=True, nullable=False, primary_key=True)
     projects = db.relationship("Project", backref="user")
 
-    uuid = db.Column(db.String(64), unique=True, nullable=False)
-
-    username = db.Column(db.String(64), unique=True, nullable=False, index=True)
+    name = db.Column(db.String(64), unique=True, nullable=False, index=True)
     email = db.Column(db.String(64), unique=True, nullable=False)
     password = db.Column(db.String(72), nullable=False)
 
@@ -19,4 +17,4 @@ class User(db.Model):
     updatedAt = db.Column(db.DateTime, onupdate=datetime.now)
 
     def __repr__(self):
-        return f"<User {self.username}>"
+        return f"<User {self.name}>"

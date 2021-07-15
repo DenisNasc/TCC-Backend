@@ -44,9 +44,9 @@ from security import authenticate, identity
 jwt = JWT(app, authenticate, identity)
 
 
-api.add_resource(Users, "/v1/users/<uuid>", "/v1/users")
+api.add_resource(Users, "/v1/users/<id>", "/v1/users")
 api.add_resource(
-    Projects, "/users/<user_id>/projects/<id>", "/users/<user_id>/projects"
+    Projects, "/v1/users/<user_id>/projects/<id>", "/v1/users/<user_id>/projects"
 )
 api.add_resource(
     Stations,

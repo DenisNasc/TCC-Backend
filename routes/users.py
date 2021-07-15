@@ -11,8 +11,7 @@ db = g.db
 
 response_fields = {
     "id": fields.String,
-    "uuid": fields.String,
-    "username": fields.String,
+    "name": fields.String,
     "password": fields.String,
     "email": fields.String,
     "createdAt": fields.DateTime,
@@ -31,15 +30,15 @@ def init_args(fields):
 
 
 class Users(Resource):
-    @jwt_required()
+    # @jwt_required()
     @marshal_with(response_fields)
-    def get(self, uuid=0):
+    def get(self, id=0):
         try:
-            if uuid == 0:
+            if id == 0:
                 users_all = User.query.all()
                 return users_all, 200, {}
 
-            user = User.query.filter_by(uuid=uuid).first()
+            user = User.query.filter_by(id=id).first()
             if not user:
                 return {}, 400, {}
 
@@ -49,24 +48,23 @@ class Users(Resource):
 
     @marshal_with(response_fields)
     def post(self):
-        fields = ("username", "email", "password")
+        fields = ("name", "email", "password")
         args = init_args(fields)
 
         try:
-            username = User.query.filter_by(username=args.username).first()
-            email = User.query.filter_by(username=args.email).first()
+            name = User.query.filter_by(name=args.name).first()
+            email = User.query.filter_by(email=args.email).first()
 
-            if email or username:
+            if email or name:
                 return {}, 409, {}
-
-            user_uuid = str(uuid4())
 
             salt = bcrypt.gensalt()
             hashed = bcrypt.hashpw(str.encode(args["password"]), salt)
 
             args["password"] = hashed.decode()
+            args["id"] = str(uuid4())
 
-            new_user = User(uuid=user_uuid, **args)
+            new_user = User(**args)
 
             db.session.add(new_user)
             db.session.commit()
@@ -79,7 +77,7 @@ class Users(Resource):
     # @marshal_with(response_fields)
     def put(self, id):
         try:
-            fields = ("username", "email", "password")
+            fields = ("name", "email", "password")
             args = init_args(fields)
 
             user = User.query.filter_by(id=id).first()
@@ -89,7 +87,7 @@ class Users(Resource):
 
                 return response, 400, {}
 
-            user.username = args.username
+            user.name = args.name
             user.email = args.email
             user.password = args.password
             db.session.commit()

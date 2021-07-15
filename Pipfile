@@ -1,0 +1,39 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+flask = "*"
+flask-restful = "*"
+flask-sqlalchemy = "*"
+isort = "*"
+pytest = "*"
+flake8 = "*"
+flask-migrate = "*"
+uvicorn = "*"
+pandas = "*"
+openpyxl = "*"
+flask-cors = "*"
+pyopenssl = "*"
+uuid = "*"
+bcrypt = "*"
+flask-jwt = "*"
+
+[dev-packages]
+black = "*"
+
+[requires]
+python_version = "3.8"
+
+[scripts]
+sort = "isort ."
+test = "pytest ."
+start = "python app.py"
+migrate_init = "flask db init"
+migrate = "flask db migrate"
+migrate_up = "flask db upgrade"
+migrate_dw = "flask db downgrade"
+
+[pipenv]
+allow_prereleases = true

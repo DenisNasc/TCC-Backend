@@ -1,0 +1,4 @@
+.vscode
+*.lock
+dist
+__pycache__

@@ -7,6 +7,8 @@ from models.users import User
 
 from uuid import uuid4
 
+from services.delOrParseFloat import delOrParseFloat
+
 db = g.db
 
 response_fields = {
@@ -61,7 +63,7 @@ class Projects(Resource):
                 "shipyard",
             )
             args = init_args(fields)
-            print(user_id)
+
             user = User.query.filter_by(id=user_id).first()
 
             if not user:
@@ -76,10 +78,17 @@ class Projects(Resource):
 
                 return response, 409, {}
 
-            args["lengthOverall"] = float(args["lengthOverall"])
-            args["lengthPerpendiculars"] = float(args["lengthPerpendiculars"])
-            args["breadth"] = float(args["breadth"])
-            args["draft"] = float(args["draft"])
+            if not args["engineer"]:
+                args["engineer"] = user.name
+
+            if not args["shipyard"]:
+                del args["shipyard"]
+
+            delOrParseFloat(args, "lengthOverall")
+            delOrParseFloat(args, "lengthPerpendiculars")
+            delOrParseFloat(args, "breadth")
+            delOrParseFloat(args, "draft")
+
             args["id"] = str(uuid4())
             args["userID"] = user_id
 

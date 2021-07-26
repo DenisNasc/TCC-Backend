@@ -40,16 +40,19 @@ class Projects(Resource):
     @jwt_required()
     @marshal_with(response_fields)
     def get(self, user_id, id=None):
-        if not id:
-            projects = Project.query.filter_by(userID=user_id).all()
-            print(projects)
-            return projects, 200, {}
+        try:
+            if not id:
+                projects = Project.query.filter_by(userID=user_id).all()
 
-        project = Project.query.filter_by(userID=user_id, id=id).first()
+                return projects, 200, {}
 
-        return project, 200, {}
+            project = Project.query.filter_by(userID=user_id, id=id).first()
 
-    # @jwt_required()
+            return project, 200, {}
+        except:
+            return {}, 500, {}
+
+    @jwt_required()
     @marshal_with(response_fields)
     def post(self, user_id):
         try:
@@ -98,5 +101,24 @@ class Projects(Resource):
             db.session.commit()
 
             return new_project, 201, {}
+        except:
+            return {}, 500, {}
+
+    @jwt_required()
+    @marshal_with(response_fields)
+    def delete(self, user_id, id):
+        try:
+            user = User.query.filter_by(id=user_id).first()
+            if not user:
+                return {}, 400, {}
+
+            project = Project.query.filter_by(id=id).first()
+            if not project:
+                return {}, 400, {}
+
+            db.session.delete(project)
+            db.session.commit()
+
+            return {}, 200, {}
         except:
             return {}, 500, {}

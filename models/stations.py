@@ -14,8 +14,9 @@ class EnumType(Enum):
 # /users/<user_id>/projects/<project_id>/stations/<id>
 class Station(db.Model):
     __tablename__ = "stations"
-    id = db.Column(db.Integer, primary_key=True)
-    project_id = db.Column(db.Integer, db.ForeignKey("projects.id"), nullable=False)
+    id = db.Column(db.String(64), primary_key=True)
+    projectID = db.Column(db.Integer, db.ForeignKey("projects.id"), nullable=False)
+    userID = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
 
     type = db.Column(db.Enum(EnumType), default=0)
     vertical = db.Column(db.Float(precision=4))

@@ -37,25 +37,36 @@ migrate = Migrate(app, db)
 from routes.users import Users
 from routes.projects import Projects
 from routes.stations import Stations
-from routes.input_data import InputData
+from routes.coordinates import Coordinates
+
 
 from security import authenticate, identity
 
 jwt = JWT(app, authenticate, identity)
 
 
-api.add_resource(Users, "/v1/users/<id>", "/v1/users")
 api.add_resource(
-    Projects, "/v1/users/<user_id>/projects/<id>", "/v1/users/<user_id>/projects"
+    Users,
+    "/v1/users",
+    "/v1/users/<id>",
 )
 api.add_resource(
-    Stations,
-    "/users/<user_id>/projects/<project_id>/stations/<id>",
-    "/users/<user_id>/projects/<project_id>/stations",
+    Projects,
+    "/v1/users/<user_id>/projects",
+    "/v1/users/<user_id>/projects/<id>",
 )
 
-api.add_resource(InputData, "/input-data/to-excel")
-# api.add_resource(InputData, "/input-data/to-json")
+api.add_resource(
+    Stations,
+    "/v1/users/<user_id>/projects/<project_id>/stations",
+    "/v1/users/<user_id>/projects/<project_id>/stations/<station_id>",
+)
+
+api.add_resource(
+    Coordinates,
+    "/v1/users/<user_id>/projects/<project_id>/stations/<station_id>/coordinates",
+    "/v1/users/<user_id>/projects/<project_id>/stations/<station_id>/coordinates/<coordinate_id>",
+)
 
 
 if __name__ == "__main__":

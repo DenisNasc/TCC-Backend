@@ -8,6 +8,7 @@ class Project(db.Model):
     __tablename__ = "projects"
     id = db.Column(db.String(64), primary_key=True)
     userID = db.Column(db.String(64), db.ForeignKey("users.id"), nullable=False)
+
     stations = db.relationship("Station", backref="station")
 
     name = db.Column(db.String(64), nullable=False, unique=True)

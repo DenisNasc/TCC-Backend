@@ -7,6 +7,7 @@ db = g.db
 class User(db.Model):
     __tablename__ = "users"
     id = db.Column(db.String(64), unique=True, nullable=False, primary_key=True)
+    
     projects = db.relationship("Project", backref="user")
 
     name = db.Column(db.String(64), unique=True, nullable=False, index=True)

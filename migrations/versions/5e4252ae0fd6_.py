@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: 023d7120c8b8
+Revision ID: 5e4252ae0fd6
 Revises: 
-Create Date: 2021-07-16 08:03:42.297705
+Create Date: 2021-07-26 16:11:21.797069
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '023d7120c8b8'
+revision = '5e4252ae0fd6'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -47,15 +47,18 @@ def upgrade():
     sa.UniqueConstraint('name')
     )
     op.create_table('stations',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('project_id', sa.Integer(), nullable=False),
-    sa.Column('type', sa.Enum(name='enumtype'), nullable=True),
-    sa.Column('vertical', sa.Float(precision=4), nullable=True),
-    sa.Column('transversal', sa.Float(precision=4), nullable=True),
+    sa.Column('id', sa.String(length=64), nullable=False),
+    sa.Column('projectID', sa.Integer(), nullable=False),
+    sa.Column('userID', sa.Integer(), nullable=False),
+    sa.Column('name', sa.String(length=64), nullable=False),
+    sa.Column('longitudinal', sa.Float(precision=4), nullable=True),
     sa.Column('createdAt', sa.DateTime(), nullable=False),
     sa.Column('updatedAt', sa.DateTime(), nullable=True),
-    sa.ForeignKeyConstraint(['project_id'], ['projects.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.ForeignKeyConstraint(['projectID'], ['projects.id'], ),
+    sa.ForeignKeyConstraint(['userID'], ['users.id'], ),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('longitudinal'),
+    sa.UniqueConstraint('name')
     )
     # ### end Alembic commands ###
 

@@ -37,7 +37,7 @@ def init_args(fields):
 
 
 class Projects(Resource):
-    @jwt_required()
+    # @jwt_required()
     @marshal_with(response_fields)
     def get(self, user_id, id=None):
         try:
@@ -52,7 +52,7 @@ class Projects(Resource):
         except:
             return {}, 500, {}
 
-    @jwt_required()
+    # @jwt_required()
     @marshal_with(response_fields)
     def post(self, user_id):
         try:

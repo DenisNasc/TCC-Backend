@@ -5,20 +5,22 @@ name = "pypi"
 
 [packages]
 flask = "*"
-flask-restful = "*"
+flask-cors = "*"
 flask-sqlalchemy = "*"
+flask-migrate = "*"
+flask-restful = "*"
+flask-jwt-extended = "*"
+flask-bcrypt = "*"
+
+uuid = "*"
 isort = "*"
 pytest = "*"
 flake8 = "*"
-flask-migrate = "*"
 uvicorn = "*"
 pandas = "*"
 openpyxl = "*"
-flask-cors = "*"
 pyopenssl = "*"
-uuid = "*"
-bcrypt = "*"
-flask-jwt = "*"
+python-dotenv = "*"
 
 [dev-packages]
 black = "*"

@@ -11,7 +11,6 @@ flask-migrate = "*"
 flask-restful = "*"
 flask-jwt-extended = "*"
 flask-bcrypt = "*"
-
 uuid = "*"
 isort = "*"
 pytest = "*"
@@ -21,6 +20,7 @@ pandas = "*"
 openpyxl = "*"
 pyopenssl = "*"
 python-dotenv = "*"
+flask-testing = "*"
 
 [dev-packages]
 black = "*"
@@ -30,7 +30,7 @@ python_version = "3.8"
 
 [scripts]
 sort = "isort ."
-test = "pytest ."
+test = "python tests.py"
 start = "python app.py"
 migrate_init = "flask db init"
 migrate = "flask db migrate"

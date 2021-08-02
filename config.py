@@ -23,11 +23,22 @@ class Config(object):
 
 
 class DevConfig(Config):
-    SQLALCHEMY_DATABASE_URI = f'sqlite:///{os.path.join(BASEDIR, "data.sqlite")}'
+    ENV = "development"
+    SQLALCHEMY_DATABASE_URI = (
+        f'sqlite:///{os.path.join(BASEDIR,"database","sqlite" ,"dev.sqlite")}'
+    )
     DEBUG = True
     SERVER_NAME = "127.0.0.1:5000"
     PORT = 5000
     CORS_ORIGINS = "*"
+
+
+class TestConfig(Config):
+    ENV = "testing"
+    SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
+    DEBUG = True
+    TESTING = True
+    WTF_CSRF_ENABLED = False
 
 
 class ProdConfig(Config):

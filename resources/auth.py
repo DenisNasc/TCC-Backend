@@ -55,6 +55,10 @@ def initialize_auth_routes(app):
     def login():
         try:
             params = request.data.decode("UTF-8")
+
+            if not params:
+                return {"message": "Credênciais ausentes"}, 401
+
             args = json.loads(params)
 
             user = UserModel.query.filter_by(email=args["email"]).first()
@@ -64,7 +68,9 @@ def initialize_auth_routes(app):
 
             access_token = create_access_token(identity=user.id)
 
-            response = jsonify({"message": "Login realizado com sucesso!"})
+            response = jsonify(
+                {"message": "Login realizado com sucesso!", "userID": user.id}
+            )
 
             access_token = create_access_token(identity="example_user")
             set_access_cookies(response, access_token)

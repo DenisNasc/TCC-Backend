@@ -90,7 +90,7 @@ class UserApi(Resource):
 
 
 class UsersApi(Resource):
-    # @jwt_required()
+    @jwt_required()
     @marshal_with(response_fields)
     def get(self):
         try:

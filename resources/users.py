@@ -2,12 +2,17 @@ from flask import g
 from flask_restful import Resource, fields, marshal_with
 from flask_jwt_extended import jwt_required
 
-from uuid import uuid4
-
 
 from services.init_args import init_args
 
 from database.models.users import UserModel
+
+from .errors import (
+    IncorrectCheckPasswordError,
+    UserNotFoundError,
+    InternalServerError,
+    EmailAlreadyExistsError,
+)
 
 db = g.db
 
@@ -17,7 +22,7 @@ user_fields = {
     "password": fields.String,
     "email": fields.String,
     "createdAt": fields.DateTime,
-    "updateddAt": fields.DateTime,
+    "updatedAt": fields.DateTime,
 }
 
 
@@ -32,61 +37,90 @@ class UserApi(Resource):
     @marshal_with(response_fields)
     def get(self, user_id):
         try:
-            user = UserModel.query.filter_by(id=user_id).all()
+            user = UserModel.query.filter_by(id=user_id).first()
             if not user:
-                return {"message": "Usuário não cadastrado"}, 400, {}
+                raise UserNotFoundError
 
             response = {"users": user}
-            return response, 200, {}
+            return response, 200
+
+        except UserNotFoundError:
+            raise UserNotFoundError
         except:
-            return {"message": "Erro inesperado no servidor"}, 500, {}
+            raise InternalServerError
 
     @jwt_required()
     @marshal_with(response_fields)
     def put(self, user_id):
         try:
-            fields = ("name", "email", "password")
+            fields = ("name", "email", "password", "checkPassword")
             args = init_args(fields)
 
             user = UserModel.query.filter_by(id=user_id).first()
 
             if not user:
-                response = {"message": "Não existe um usuário com esses dados"}
+                raise UserNotFoundError
 
-                return response, 400, {}
+            if not user.check_password(args.checkPassword):
+                raise IncorrectCheckPasswordError
 
-            user.name = args.name
-            user.email = args.email
-            user.password = args.password
+            if args.name:
+                user.name = args.name
+
+            if args.email:
+                if UserModel.query.filter_by(email=args.email).first():
+                    raise EmailAlreadyExistsError
+
+                user.email = args.email
+
+            if args.password:
+                user.password = args.password
+                user.hash_password()
 
             db.session.commit()
 
-            response = {}
+            response = {
+                "message": "Usuário atualizado com sucesso!",
+                "users": user,
+            }
 
-            return response, 204, {}
+            return response, 200
+        except UserNotFoundError:
+            raise UserNotFoundError
+        except IncorrectCheckPasswordError:
+            raise IncorrectCheckPasswordError
+        except EmailAlreadyExistsError:
+            raise EmailAlreadyExistsError
         except:
-            response = {"message": "Um erro inesperado ocorreu no servidor!"}
-            return response, 500, {}
+            raise InternalServerError
 
     @jwt_required()
     @marshal_with(response_fields)
     def delete(self, user_id):
         try:
+            fields = ("checkPassword",)
+            args = init_args(fields)
+
             user = UserModel.query.filter_by(id=user_id).first()
 
             if not user:
-                response = {"message": "Este usuário não existe"}
-                return response, 400, {}
+                raise UserNotFoundError
+
+            if not user.check_password(args.checkPassword):
+                raise IncorrectCheckPasswordError
 
             db.session.delete(user)
             db.session.commit()
 
-            response = {"message": "Usuário deletado com sucesso!"}
-            return response, 200, {}
+            response = {"message": "Usuário deletado com sucesso!", "users": user}
+            return response, 200
 
+        except UserNotFoundError:
+            raise UserNotFoundError
+        except IncorrectCheckPasswordError:
+            raise IncorrectCheckPasswordError
         except:
-            response = {"message": "Um erro inesperado ocorreu no servidor!"}
-            return response, 500, {}
+            raise InternalServerError
 
 
 class UsersApi(Resource):
@@ -97,6 +131,7 @@ class UsersApi(Resource):
             users = UserModel.query.filter_by().all()
 
             response = {"users": users}
-            return response, 200, {}
+            return response, 200
+
         except:
-            return {"message": "Erro inesperado no servidor"}, 500, {}
+            raise InternalServerError

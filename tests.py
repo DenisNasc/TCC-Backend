@@ -89,6 +89,18 @@ class UserTests(BaseTestCase):
         # APRENDER A COMO TESTAR ROTAS PROTEGIAS PELO JWT
         pass
 
+    def test_update_user(self):
+        _, res_signup = self._signup_user()
+
+        userID = res_signup["userID"]
+        params = {
+            "name": "lucas",
+            "email": "lucas@gmail.com",
+            "password": "abc",
+            "checkPassword": 123,
+        }
+        res = self.client.put(f"/users/{userID}", params)
+
 
 if __name__ == "__main__":
     unittest.main()

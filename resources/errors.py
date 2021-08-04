@@ -13,6 +13,15 @@ class UnauthorizedError(HTTPException):
     pass
 
 
+# USER ERRORS
+class UserNotFoundError(HTTPException):
+    pass
+
+
+class IncorrectCheckPasswordError(HTTPException):
+    pass
+
+
 errors = {
     "InternalServerError": {"message": "Erro inesperado no servidor", "status": 500},
     "EmailAlreadyExistsError": {
@@ -20,4 +29,12 @@ errors = {
         "status": 400,
     },
     "UnauthorizedError": {"message": "Usuário ou senha incorretos", "status": 401},
+    "UserNotFoundError": {
+        "message": "Não existe um usuário com essas credênciais",
+        "status": 401,
+    },
+    "IncorrectCheckPasswordError": {
+        "message": "Confirmação de senha incorreta",
+        "status": 401,
+    },
 }

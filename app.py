@@ -8,14 +8,12 @@ from flask_jwt_extended import JWTManager
 from resources.errors import errors
 from database.db import initialize_db
 
-from config import DevConfig
-
 bcrypt = Bcrypt()
 
 
 def create_app(config):
     app = Flask(__name__)
-    app.config.from_object(config)
+    app.config.from_object(f"config.{config}")
     app_context = app.app_context()
     app_context.push()
 
@@ -39,5 +37,5 @@ def create_app(config):
 
 
 if __name__ == "__main__":
-    app = create_app(DevConfig)
+    app = create_app("DevConfig")
     app.run()

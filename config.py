@@ -25,7 +25,7 @@ class Config(object):
 class DevConfig(Config):
     ENV = "development"
     SQLALCHEMY_DATABASE_URI = (
-        f'sqlite:///{os.path.join(BASEDIR,"database","sqlite" ,"dev.sqlite")}'
+        f'sqlite:///{os.path.join(BASEDIR,"database","sqlite","dev.sqlite")}'
     )
     DEBUG = True
     SERVER_NAME = "127.0.0.1:5000"
@@ -35,7 +35,9 @@ class DevConfig(Config):
 
 class TestConfig(Config):
     ENV = "testing"
-    SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
+    SQLALCHEMY_DATABASE_URI = (
+        f'sqlite:///{os.path.join(BASEDIR,"database","sqlite","test.sqlite")}'
+    )
     DEBUG = True
     TESTING = True
     WTF_CSRF_ENABLED = False

@@ -4,16 +4,11 @@ import json
 
 from app import create_app
 from database.db import initialize_db
-from config import TestConfig
 
 
 class BaseTestCase(TestCase):
     def create_app(self):
-        app = create_app(TestConfig)
-
-        app.config[
-            "SQLALCHEMY_DATABASE_URI"
-        ] = "sqlite:////home/denis/Documentos/Developer/tcc-denis-backend-v2/database/sqlite/test.sqlite"
+        app = create_app("TestConfig")
 
         self.db = initialize_db(app)
 

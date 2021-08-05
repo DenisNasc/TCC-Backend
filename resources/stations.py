@@ -10,6 +10,16 @@ from database.models.stations import StationModel
 
 from services.init_args import init_args
 
+from .errors import (
+    InternalServerError,
+    UserNotFoundError,
+    ProjectNotFoundError,
+    RequestWithoutRequiredArgsError,
+    StationNotFoundError,
+    StationAlreadyHasLongitudinalError,
+    StationAlreadyHasNameError,
+)
+
 db = g.db
 
 stations_fields = {
@@ -32,10 +42,10 @@ class StationsApi(Resource):
     def get(self, user_id, project_id):
         try:
             if not UserModel.query.filter_by(id=user_id).first():
-                return {"message": "Usuário não cadastrado"}, 404, {}
+                raise UserNotFoundError
 
             if not ProjectModel.query.filter_by(id=project_id).first():
-                return {"message": "Projeto inexistente"}, 404, {}
+                raise ProjectNotFoundError
 
             stations = StationModel.query.filter_by(
                 projectID=project_id, userID=user_id
@@ -43,29 +53,45 @@ class StationsApi(Resource):
 
             response = {
                 "stations": stations,
-                "userID": user_id,
-                "projectID": project_id,
-                "message": "Não há balizas para esse projeto",
+                "message": "",
             }
 
-            return response, 200, {}
+            return response, 200
 
+        except UserNotFoundError:
+            raise UserNotFoundError
+        except ProjectNotFoundError:
+            raise ProjectNotFoundError
         except:
-            return {"message": "Error inesperado no servidor"}, 500, {}
+            raise InternalServerError
 
     @jwt_required()
     @marshal_with(response_fields)
     def post(self, user_id, project_id):
         try:
             fields = ("name", "longitudinal")
-
             args = init_args(fields)
 
+            if not args.name or not args.longitudinal:
+                raise RequestWithoutRequiredArgsError
+
             if not UserModel.query.filter_by(id=user_id).first():
-                return {"message": "Usuário não cadastrado"}, 404, {}
+                raise UserNotFoundError
 
             if not ProjectModel.query.filter_by(id=project_id).first():
-                return {"message": "Projeto inexistente"}, 404, {}
+                raise ProjectNotFoundError
+
+            if StationModel.query.filter_by(
+                userID=user_id,
+                projectID=project_id,
+                longitudinal=args.longitudinal,
+            ).first():
+                raise StationAlreadyHasLongitudinalError
+
+            if StationModel.query.filter_by(
+                userID=user_id, projectID=project_id, name=args.name
+            ).first():
+                raise StationAlreadyHasNameError
 
             args["id"] = str(uuid4())
             args["userID"] = user_id
@@ -76,20 +102,24 @@ class StationsApi(Resource):
             db.session.add(new_station)
             db.session.commit()
 
-            stations = StationModel.query.filter_by(
-                userID=user_id, projectID=project_id
-            ).all()
-
             response = {
-                "stations": stations,
-                "userID": user_id,
-                "projectID": project_id,
+                "stations": new_station,
+                "message": "Baliza criada com sucesso!",
             }
 
-            return response, 201, {}
-
+            return response, 201
+        except RequestWithoutRequiredArgsError:
+            raise RequestWithoutRequiredArgsError
+        except UserNotFoundError:
+            raise UserNotFoundError
+        except ProjectNotFoundError:
+            raise ProjectNotFoundError
+        except StationAlreadyHasLongitudinalError:
+            raise StationAlreadyHasLongitudinalError
+        except StationAlreadyHasNameError:
+            raise StationAlreadyHasNameError
         except:
-            return {"message": "Error inesperado no servidor"}, 500, {}
+            raise InternalServerError
 
 
 class StationApi(Resource):
@@ -97,18 +127,77 @@ class StationApi(Resource):
     @marshal_with(response_fields)
     def get(self, user_id, project_id, station_id):
         try:
+            if not UserModel.query.filter_by(id=user_id).first():
+                raise UserNotFoundError
+
+            if not ProjectModel.query.filter_by(id=project_id).first():
+                raise ProjectNotFoundError
 
             station = StationModel.query.filter_by(
                 projectID=project_id, userID=user_id, id=station_id
-            ).all()
+            ).first()
+
+            if not station:
+                raise StationNotFoundError
+
+            response = {"stations": station, "message": ""}
+
+            return response, 200
+
+        except UserNotFoundError:
+            raise UserNotFoundError
+        except ProjectNotFoundError:
+            raise ProjectNotFoundError
+        except StationNotFoundError:
+            raise StationNotFoundError
+        except:
+            raise InternalServerError
+
+    def put(self, user_id, project_id, station_id):
+        try:
+            fields = ("name", "longitudinal")
+            args = init_args(fields)
+
+            station = StationModel.query.filter_by(
+                projectID=project_id, userID=user_id, id=station_id
+            ).first()
+
+            if not station:
+                raise StationNotFoundError
+
+            station.name = args.name
+            station.longitudinal = args.longitudinal
+
+            db.session.commit()
 
             response = {
+                "message": "Baliza atualizada com sucesso!",
                 "stations": station,
-                "userID": user_id,
-                "projectID": project_id,
             }
 
-            return response, 200, {}
+            return response, 200
+        except StationNotFoundError:
+            raise StationNotFoundError
+        except:
+            raise InternalServerError
+
+    def delete(self, user_id, project_id, station_id):
+        try:
+            station = StationModel.query.filter_by(
+                projectID=project_id, userID=user_id, id=station_id
+            ).first()
+
+            if not station:
+                raise StationNotFoundError
+
+            db.session.delete(station)
+            db.session.commit()
+
+            response = {"message": "Baliza deletada com sucesso!", "stations": station}
+            return response, 200
+
+        except StationNotFoundError:
+            raise StationNotFoundError
 
         except:
-            return {"message": "Error inesperado no servidor"}, 500, {}
+            raise InternalServerError

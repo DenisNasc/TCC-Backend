@@ -11,10 +11,10 @@ class StationModel(db.Model):
     projectID = db.Column(db.Integer, db.ForeignKey("projects.id"), nullable=False)
     userID = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
 
-    # coordinates = db.relationship("CoordinateModel", backref="coordinate")
+    coordinates = db.relationship("CoordinateModel", backref="coordinate")
 
-    name = db.Column(db.String(64), nullable=False, unique=True)
-    longitudinal = db.Column(db.Float(precision=4), unique=True)
+    name = db.Column(db.String(64), nullable=False)
+    longitudinal = db.Column(db.Float(precision=4), nullable=False)
 
     createdAt = db.Column(db.DateTime, nullable=False, default=datetime.now())
     updatedAt = db.Column(db.DateTime, onupdate=datetime.now)

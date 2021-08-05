@@ -5,6 +5,10 @@ class InternalServerError(HTTPException):
     pass
 
 
+class RequestWithoutRequiredArgsError(HTTPException):
+    pass
+
+
 class EmailAlreadyExistsError(HTTPException):
     pass
 
@@ -22,8 +26,30 @@ class IncorrectCheckPasswordError(HTTPException):
     pass
 
 
+# PROJECT ERRORS
+class ProjectNotFoundError(HTTPException):
+    pass
+
+
+# STATION ERRORS
+class StationNotFoundError(HTTPException):
+    pass
+
+
+class StationAlreadyHasLongitudinalError(HTTPException):
+    pass
+
+
+class StationAlreadyHasNameError(HTTPException):
+    pass
+
+
 errors = {
     "InternalServerError": {"message": "Erro inesperado no servidor", "status": 500},
+    "RequestWithoutRequiredArgsError": {
+        "message": "A requisição carece de argumentos obrigatórios",
+        "status": 400,
+    },
     "EmailAlreadyExistsError": {
         "message": "Usuário já cadastrado com esse email",
         "status": 400,
@@ -36,5 +62,21 @@ errors = {
     "IncorrectCheckPasswordError": {
         "message": "Confirmação de senha incorreta",
         "status": 401,
+    },
+    "ProjectNotFoundError": {
+        "message": "Projeto inexistente",
+        "status": 400,
+    },
+    "StationNotFoundError": {
+        "message": "Baliza inexistente",
+        "status": 400,
+    },
+    "StationAlreadyHasLongitudinalError": {
+        "message": "Uma baliza já possui essa posição longitudinal",
+        "status": 400,
+    },
+    "StationAlreadyHasNameError": {
+        "message": "Uma baliza já possui esse nome",
+        "status": 400,
     },
 }

@@ -49,7 +49,7 @@ class ProjectsApi(Resource):
         except:
             return {"message": "Erro inesperado no servidor!"}, 500, {}
 
-    @jwt_required()
+    # @jwt_required()
     @marshal_with(response_fields)
     def post(self, user_id):
         try:

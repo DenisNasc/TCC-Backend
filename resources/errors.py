@@ -31,6 +31,10 @@ class ProjectNotFoundError(HTTPException):
     pass
 
 
+class ProjectAlreadyHasNameError(HTTPException):
+    pass
+
+
 # STATION ERRORS
 class StationNotFoundError(HTTPException):
     pass
@@ -41,6 +45,11 @@ class StationAlreadyHasLongitudinalError(HTTPException):
 
 
 class StationAlreadyHasNameError(HTTPException):
+    pass
+
+
+# COORDINATE ERRORS
+class CoordinateNotFoundError(HTTPException):
     pass
 
 
@@ -67,6 +76,10 @@ errors = {
         "message": "Projeto inexistente",
         "status": 400,
     },
+    "ProjectAlreadyHasNameError": {
+        "message": "Um projeto já possui esse nome",
+        "status": 400,
+    },
     "StationNotFoundError": {
         "message": "Baliza inexistente",
         "status": 400,
@@ -77,6 +90,10 @@ errors = {
     },
     "StationAlreadyHasNameError": {
         "message": "Uma baliza já possui esse nome",
+        "status": 400,
+    },
+    "CoordinateNotFoundError": {
+        "message": "Coordenada inexistente",
         "status": 400,
     },
 }

@@ -176,6 +176,7 @@ class StationApi(Resource):
             }
 
             return response, 200
+
         except StationNotFoundError:
             raise StationNotFoundError
         except:

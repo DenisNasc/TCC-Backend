@@ -11,6 +11,13 @@ from database.models.projects import ProjectModel
 from database.models.stations import StationModel
 from database.models.coordinates import CoordinateModel
 
+from .errors import (
+    InternalServerError,
+    ProjectNotFoundError,
+    StationNotFoundError,
+    UserNotFoundError,
+    CoordinateNotFoundError,
+)
 
 db = g.db
 
@@ -33,22 +40,48 @@ response_fields = {
 
 
 class CoordinatesApi(Resource):
+    def _verify_request(self, user_id, project_id, station_id):
+        if not UserModel.query.filter_by(id=user_id).first():
+            raise UserNotFoundError
+
+        if not ProjectModel.query.filter_by(id=project_id).first():
+            raise ProjectNotFoundError
+
+        if not StationModel.query.filter_by(id=station_id).first():
+            raise StationNotFoundError
+
     @jwt_required()
     @marshal_with(response_fields)
     def get(self, user_id, project_id, station_id):
         try:
+            if not UserModel.query.filter_by(id=user_id).first():
+                raise UserNotFoundError
+
+            if not ProjectModel.query.filter_by(id=project_id).first():
+                raise ProjectNotFoundError
+
+            if not StationModel.query.filter_by(id=station_id).first():
+                raise StationNotFoundError
+
             coordinates = CoordinateModel.query.filter_by(
                 userID=user_id, projectID=project_id, stationID=station_id
             ).all()
 
             response = {
+                "message": "",
                 "coordinates": coordinates,
             }
 
-            return response, 200, {}
+            return response, 200
 
+        except UserNotFoundError:
+            raise UserNotFoundError
+        except ProjectNotFoundError:
+            raise ProjectNotFoundError
+        except StationNotFoundError:
+            raise StationNotFoundError
         except:
-            return {"message": "Erro inesperado no servidor"}, 500, {}
+            raise InternalServerError
 
     @jwt_required()
     @marshal_with(response_fields)
@@ -59,13 +92,13 @@ class CoordinatesApi(Resource):
             args = init_args(fields)
 
             if not UserModel.query.filter_by(id=user_id).first():
-                return {"message": "Usuário não cadastrado"}, 404, {}
+                raise UserNotFoundError
 
             if not ProjectModel.query.filter_by(id=project_id).first():
-                return {"message": "Projeto inexistente"}, 404, {}
+                raise ProjectNotFoundError
 
             if not StationModel.query.filter_by(id=station_id).first():
-                return {"message": "Baliza inexistente"}, 404, {}
+                raise StationNotFoundError
 
             args["id"] = str(uuid4())
             args["userID"] = user_id
@@ -77,47 +110,132 @@ class CoordinatesApi(Resource):
             db.session.add(new_coordinate)
             db.session.commit()
 
-            print("oi")
             coordinates = CoordinateModel.query.filter_by(
                 userID=user_id, projectID=project_id, stationID=station_id
             ).all()
 
             response = {
                 "coordinates": coordinates,
-                "userID": user_id,
-                "projectID": project_id,
-                "stationID": station_id,
+                "message": "Coordenada criada com sucesso!",
             }
 
-            return response, 201, {}
+            return response, 201
 
+        except UserNotFoundError:
+            raise UserNotFoundError
+        except ProjectNotFoundError:
+            raise ProjectNotFoundError
+        except StationNotFoundError:
+            raise StationNotFoundError
         except:
-            return {"message": "Erro inesperado no servidor"}, 500, {}
+            raise InternalServerError
 
 
 class CoordinateApi(Resource):
     def get(self, user_id, project_id, station_id, coordinate_id):
         try:
-            if station_id and not UserModel.query.filter_by(id=user_id).first():
-                return {"message": "Usuário não cadastrado"}, 404, {}
+            if not UserModel.query.filter_by(id=user_id).first():
+                raise UserNotFoundError
 
-            if station_id and not ProjectModel.query.filter_by(id=project_id).first():
-                return {"message": "Projeto inexistente"}, 404, {}
+            if not ProjectModel.query.filter_by(id=project_id).first():
+                raise ProjectNotFoundError
 
-            if station_id and not StationModel.query.filter_by(id=station_id).first():
-                return {"message": "Baliza inexistente"}, 404, {}
+            if not StationModel.query.filter_by(id=station_id).first():
+                raise StationNotFoundError
 
-            coordinate = CoordinateModel.query.filter_by(
-                projectID=project_id,
-                userID=user_id,
-                stationID=station_id,
-                id=coordinate_id,
-            ).all()
+            coordinate = CoordinateModel.query.filter_by(id=coordinate_id).first()
+
+            if not coordinate:
+                raise CoordinateNotFoundError
+
+            response = {"coordinates": coordinate}
+
+            return response, 200
+
+        except UserNotFoundError:
+            raise UserNotFoundError
+        except ProjectNotFoundError:
+            raise ProjectNotFoundError
+        except StationNotFoundError:
+            raise StationNotFoundError
+        except CoordinateNotFoundError:
+            raise CoordinateNotFoundError
+
+        except:
+            raise InternalServerError
+
+    def put(self, user_id, project_id, station_id, coordinate_id):
+        try:
+            fields = ("name", "longitudinal")
+            args = init_args(fields)
+
+            if not UserModel.query.filter_by(id=user_id).first():
+                raise UserNotFoundError
+
+            if not ProjectModel.query.filter_by(id=project_id).first():
+                raise ProjectNotFoundError
+
+            if not StationModel.query.filter_by(id=station_id).first():
+                raise StationNotFoundError
+
+            coordinate = CoordinateModel.query.filter_by(id=coordinate_id).first()
+
+            if not coordinate:
+                raise CoordinateNotFoundError
+
+            for key, value in args.items():
+                if value:
+                    coordinate[key] = value
+
+            db.session.commit()
 
             response = {
+                "message": "Baliza atualizada com sucesso!",
                 "coordinates": coordinate,
             }
 
-            return response, 200, {}
+            return response, 200
+
+        except UserNotFoundError:
+            raise UserNotFoundError
+        except ProjectNotFoundError:
+            raise ProjectNotFoundError
+        except StationNotFoundError:
+            raise StationNotFoundError
+        except CoordinateNotFoundError:
+            raise CoordinateNotFoundError
+
         except:
-            return {}
+            raise InternalServerError
+
+    def delete(self, user_id, project_id, station_id, coordinate_id):
+        try:
+            if not UserModel.query.filter_by(id=user_id).first():
+                raise UserNotFoundError
+
+            if not ProjectModel.query.filter_by(id=project_id).first():
+                raise ProjectNotFoundError
+
+            if not StationModel.query.filter_by(id=station_id).first():
+                raise StationNotFoundError
+
+            coordinate = CoordinateModel.query.filter_by(id=coordinate_id).first()
+
+            db.session.delete(coordinate)
+            db.session.commit()
+
+            response = {
+                "message": "Coordenada deletada com sucesso!",
+            }
+            return response, 200
+
+        except UserNotFoundError:
+            raise UserNotFoundError
+        except ProjectNotFoundError:
+            raise ProjectNotFoundError
+        except StationNotFoundError:
+            raise StationNotFoundError
+        except CoordinateNotFoundError:
+            raise CoordinateNotFoundError
+        except:
+            raise InternalServerError

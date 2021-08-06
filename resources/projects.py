@@ -9,6 +9,13 @@ from services.init_args import init_args
 from database.models.projects import ProjectModel
 from database.models.users import UserModel
 
+from .errors import (
+    InternalServerError,
+    ProjectNotFoundError,
+    UserNotFoundError,
+    ProjectAlreadyHasNameError,
+    IncorrectCheckPasswordError,
+)
 
 from services.delOrParseFloat import delOrParseFloat
 
@@ -39,17 +46,26 @@ class ProjectsApi(Resource):
     @marshal_with(response_fields)
     def get(self, user_id):
         try:
+            user = UserModel.query.filter_by(id=user_id).first()
+
+            if not user:
+                raise UserNotFoundError
+
             projects = ProjectModel.query.filter_by(userID=user_id).all()
 
             response = {
+                "message": "",
                 "projects": projects,
             }
 
-            return response, 200, {}
-        except:
-            return {"message": "Erro inesperado no servidor!"}, 500, {}
+            return response, 200
 
-    # @jwt_required()
+        except UserNotFoundError:
+            raise UserNotFoundError
+        except:
+            raise InternalServerError
+
+    @jwt_required()
     @marshal_with(response_fields)
     def post(self, user_id):
         try:
@@ -67,12 +83,12 @@ class ProjectsApi(Resource):
             user = UserModel.query.filter_by(id=user_id).first()
 
             if not user:
-                return {"message": "Usuário não existe"}, 400, {}
+                raise UserNotFoundError
 
-            name = ProjectModel.query.filter_by(name=args.name).first()
+            name = ProjectModel.query.filter_by(id=user_id, name=args.name).first()
 
             if name:
-                return {"message": "Ja existe um projeto com esse nome"}, 409, {}
+                raise ProjectAlreadyHasNameError
 
             if not args["engineer"]:
                 args["engineer"] = user.name
@@ -98,9 +114,14 @@ class ProjectsApi(Resource):
                 "projects": new_project,
             }
 
-            return response, 201, {}
+            return response, 201
+
+        except UserNotFoundError:
+            raise UserNotFoundError
+        except ProjectAlreadyHasNameError:
+            raise ProjectAlreadyHasNameError
         except:
-            return {"message": "Erro inesperado no servidor!"}, 500, {}
+            raise InternalServerError
 
 
 class ProjectApi(Resource):
@@ -108,46 +129,88 @@ class ProjectApi(Resource):
     @marshal_with(response_fields)
     def get(self, user_id, project_id):
         try:
-
             project = ProjectModel.query.filter_by(
                 userID=user_id, id=project_id
             ).first()
 
             response = {
+                "message": "",
                 "projects": project,
             }
 
-            return response, 200, {}
+            return response, 200
+
         except:
-            return {"message": "Erro inesperado no servidor!"}, 500, {}
+            raise InternalServerError
 
     @jwt_required()
     @marshal_with(response_fields)
     def put(self, user_id, project_id):
-        return ""
+        try:
+            fields = (
+                "name",
+                "lengthOverall",
+                "lengthPerpendiculars",
+                "breadth",
+                "draft",
+                "engineer",
+                "shipyard",
+            )
+            args = init_args(fields)
+
+            project = ProjectModel.query.filter_by(
+                userID=user_id, id=project_id
+            ).first()
+
+            if not project:
+                raise ProjectNotFoundError
+
+            for key, value in args.items():
+                if not value:
+                    pass
+                else:
+                    project[key] = value
+
+        except ProjectNotFoundError:
+            raise ProjectNotFoundError
+        except:
+            raise InternalServerError
 
     @jwt_required()
     @marshal_with(response_fields)
     def delete(self, user_id, project_id):
         try:
-            user = User.query.filter_by(id=user_id).first()
-            if not user:
-                return {"message": "Este usuário não existe"}, 400, {}
+            fields = ("checkPassword",)
+            args = init_args(fields)
 
-            project = Project.query.filter_by(id=project_id).first()
+            user = UserModel.query.filter_by(id=user_id).first()
+
+            if not user:
+                raise UserNotFoundError
+
+            if not user.check_password(args.checkPassword):
+                raise IncorrectCheckPasswordError
+
+            project = ProjectModel.query.filter_by(
+                userID=user_id, id=project_id
+            ).first()
+
             if not project:
-                return {"message": "Este projeto não existe"}, 400, {}
+                raise ProjectNotFoundError
 
             db.session.delete(project)
             db.session.commit()
 
-            projects = Project.query.filter_by(userID=user_id).all()
+            projects = ProjectModel.query.filter_by(userID=user_id).all()
 
             response = {
                 "message": "Projeto deletado com sucesso!",
                 "projects": projects,
             }
 
-            return response, 200, {}
+            return response, 200
+
+        except ProjectNotFoundError:
+            raise ProjectNotFoundError
         except:
-            return {"message": "Erro inesperado no servidor!"}, 500, {}
+            raise InternalServerError

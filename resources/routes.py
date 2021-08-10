@@ -2,6 +2,7 @@ from .auth import SignupApi
 from .users import UsersApi, UserApi
 from .projects import ProjectsApi, ProjectApi
 from .stations import StationsApi, StationApi
+from .hidrostatics import HidrostaticsApi
 
 from .coordinates import CoordinatesApi, CoordinateApi
 
@@ -14,6 +15,10 @@ def initialize_routes(api):
 
     api.add_resource(ProjectsApi, "/v1/users/<user_id>/projects")
     api.add_resource(ProjectApi, "/v1/users/<user_id>/projects/<project_id>")
+
+    api.add_resource(
+        HidrostaticsApi, "/v1/users/<user_id>/projects/<project_id>/hidrostatics"
+    )
 
     api.add_resource(StationsApi, "/v1/users/<user_id>/projects/<project_id>/stations")
     api.add_resource(

@@ -33,7 +33,6 @@ response_fields = {
 
 
 class UserApi(Resource):
-    @jwt_required()
     @marshal_with(response_fields)
     def get(self, user_id):
         try:
@@ -124,7 +123,7 @@ class UserApi(Resource):
 
 
 class UsersApi(Resource):
-    @jwt_required()
+    # @jwt_required()
     @marshal_with(response_fields)
     def get(self):
         try:

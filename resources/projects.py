@@ -2,19 +2,22 @@ from flask import g
 from flask_restful import Resource, fields, marshal_with
 from flask_jwt_extended import jwt_required
 
+import pandas as pd
+
 from uuid import uuid4
 
 from services.init_args import init_args
+from services.stationArea import stationArea
 
-from database.models.projects import ProjectModel
 from database.models.users import UserModel
+from database.models.projects import ProjectModel
+
 
 from .errors import (
     InternalServerError,
     ProjectNotFoundError,
     UserNotFoundError,
     ProjectAlreadyHasNameError,
-    IncorrectCheckPasswordError,
 )
 
 from services.delOrParseFloat import delOrParseFloat
@@ -42,7 +45,7 @@ response_fields = {
 
 
 class ProjectsApi(Resource):
-    @jwt_required()
+    # @jwt_required()
     @marshal_with(response_fields)
     def get(self, user_id):
         try:
@@ -85,7 +88,7 @@ class ProjectsApi(Resource):
             if not user:
                 raise UserNotFoundError
 
-            name = ProjectModel.query.filter_by(id=user_id, name=args.name).first()
+            name = ProjectModel.query.filter_by(userID=user_id, name=args.name).first()
 
             if name:
                 raise ProjectAlreadyHasNameError
@@ -125,7 +128,7 @@ class ProjectsApi(Resource):
 
 
 class ProjectApi(Resource):
-    @jwt_required()
+    # @jwt_required()
     @marshal_with(response_fields)
     def get(self, user_id, project_id):
         try:
@@ -180,16 +183,10 @@ class ProjectApi(Resource):
     @marshal_with(response_fields)
     def delete(self, user_id, project_id):
         try:
-            fields = ("checkPassword",)
-            args = init_args(fields)
-
             user = UserModel.query.filter_by(id=user_id).first()
 
             if not user:
                 raise UserNotFoundError
-
-            if not user.check_password(args.checkPassword):
-                raise IncorrectCheckPasswordError
 
             project = ProjectModel.query.filter_by(
                 userID=user_id, id=project_id

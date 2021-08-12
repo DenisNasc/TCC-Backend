@@ -21,6 +21,8 @@ openpyxl = "*"
 pyopenssl = "*"
 python-dotenv = "*"
 flask-testing = "*"
+numpy = "*"
+scipy = "*"
 
 [dev-packages]
 black = "*"

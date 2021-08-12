@@ -2,6 +2,7 @@ from flask import g
 from flask_restful import Resource, fields, marshal_with
 from flask_jwt_extended import jwt_required
 
+from scipy import integrate
 
 from services.stationArea import stationArea
 
@@ -22,6 +23,10 @@ db = g.db
 
 
 class HidrostaticsApi(Resource):
+    def __init__(self) -> None:
+        super().__init__()
+        self.HIDROSTATICS = {}
+
     def _format_data(self, stations):
         stations = [x.__dict__ for x in stations]
 
@@ -34,7 +39,11 @@ class HidrostaticsApi(Resource):
 
             coordinates = [x.__dict__ for x in coordinates]
             coordinates = [
-                {"vertical": x["vertical"], "transversal": x["transversal"]}
+                {
+                    "vertical": x["vertical"],
+                    "transversal": x["transversal"],
+                    "type": x["type"],
+                }
                 for x in coordinates
             ]
 
@@ -57,6 +66,14 @@ class HidrostaticsApi(Resource):
 
         self.STATIONS = stations
 
+    def _calculate_moldade_volume(self):
+        areas = [x["area"] for x in self.STATIONS]
+        longitudinals = [x["longitudinal"] for x in self.STATIONS]
+
+        volume = integrate.simpson(y=areas, x=longitudinals)
+
+        self.HIDROSTATICS["MOLDADE_VOLUME"] = volume
+
     def get(self, user_id, project_id):
         try:
             if not UserModel.query.filter_by(id=user_id).first():
@@ -72,8 +89,9 @@ class HidrostaticsApi(Resource):
             )
 
             self._format_data(stations)
+            self._calculate_moldade_volume()
 
-            print(self.STATIONS)
+            print(self.HIDROSTATICS)
 
             return {}, 200
 

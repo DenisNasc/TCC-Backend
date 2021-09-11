@@ -23,11 +23,12 @@ db = g.db
 
 coordinates_fields = {
     "id": fields.String,
+    "stationID": fields.String,
     "type": fields.String,
     "vertical": fields.Float,
     "transversal": fields.Float,
     "createdAt": fields.DateTime,
-    "updateddAt": fields.DateTime,
+    "updatedAt": fields.DateTime,
 }
 
 response_fields = {

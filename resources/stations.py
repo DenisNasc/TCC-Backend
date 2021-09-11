@@ -7,6 +7,7 @@ from uuid import uuid4
 from database.models.users import UserModel
 from database.models.projects import ProjectModel
 from database.models.stations import StationModel
+from database.models.coordinates import CoordinateModel
 
 from services.init_args import init_args
 
@@ -191,14 +192,16 @@ class StationApi(Resource):
             if not station:
                 raise StationNotFoundError
 
+            CoordinateModel.query.filter(
+                CoordinateModel.stationID == station_id
+            ).delete()
+
             db.session.delete(station)
+            print(station)
             db.session.commit()
 
-            response = {"message": "Baliza deletada com sucesso!", "stations": station}
+            response = {"message": "Baliza deletada com sucesso!"}
             return response, 200
 
         except StationNotFoundError:
             raise StationNotFoundError
-
-        except:
-            raise InternalServerError

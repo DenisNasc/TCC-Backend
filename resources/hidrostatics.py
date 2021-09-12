@@ -3,6 +3,7 @@ from flask_restful import Resource, fields, marshal_with
 from flask_jwt_extended import jwt_required
 
 from scipy import integrate
+import numpy as np
 
 from services.stationArea import stationArea
 
@@ -25,6 +26,8 @@ db = g.db
 class HidrostaticsApi(Resource):
     def __init__(self) -> None:
         super().__init__()
+        self.DRAFTS = []
+        self.STATIONS = []
         self.HIDROSTATICS = {}
 
     def _format_data(self, stations):
@@ -57,16 +60,17 @@ class HidrostaticsApi(Resource):
 
             stations[key] = station
 
-        for key, station in enumerate(stations):
-            coordinates = station["coordinates"]
-
-            area = stationArea(coordinates)
-            station["area"] = area
-            stations[key] = station
-
         self.STATIONS = stations
 
-    def _calculate_moldade_volume(self):
+    def _calculate_area(self, draft):
+        for key, station in enumerate(self.STATIONS):
+            coordinates = station["coordinates"]
+
+            area = stationArea(coordinates, draft)
+
+            self.STATIONS["area"] = {"area": area, "draft": draft}
+
+    def _calculate_moldade_volume(self, draft):
         areas = [x["area"] for x in self.STATIONS]
         longitudinals = [x["longitudinal"] for x in self.STATIONS]
 
@@ -82,6 +86,10 @@ class HidrostaticsApi(Resource):
             if not ProjectModel.query.filter_by(id=project_id).first():
                 raise ProjectNotFoundError
 
+            project = ProjectModel.query.filter_by(id=project_id).first()
+
+            self.DRAFTS = np.arange(0, project.draft + 0.05, 0.05)
+
             stations = (
                 StationModel.query.filter_by(projectID=project_id)
                 .order_by(StationModel.longitudinal)
@@ -89,11 +97,17 @@ class HidrostaticsApi(Resource):
             )
 
             self._format_data(stations)
-            self._calculate_moldade_volume()
 
-            print(self.HIDROSTATICS)
+            for draft in self.DRAFTS:
+                self._calculate_area(draft)
 
-            return {}, 200
+            # for draft in self.DRAFTS:
+            # print(draft)
+            # self._calculate_moldade_volume(draft)
+
+            # print(self.HIDROSTATICS)
+
+            return {"hidrostatics": self.HIDROSTATICS}, 200
 
         except UserNotFoundError:
             raise UserNotFoundError

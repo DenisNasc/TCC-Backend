@@ -1,29 +1,53 @@
 # RECEBE COMO PARÂMETROS UM ARRAY DE OBJETOS [{"vertical", "transversal"}] COM AS COORDENADAS DE MODO ORDENADO
-def stationArea(coordinates):
+def stationArea(coordinates, draft):
     if len(coordinates) == 0:
         return 0
 
-    length = len(coordinates) - 1
     first_part = 0
     second_part = 0
 
-    for key, coord in enumerate(coordinates):
-        vert = coord["vertical"]
-        i = key + 1
+    coordsBellowDraft = []
 
-        if i > length:
-            i = 0
+    for key, value in enumerate(coordinates):
+        vertical = value["vertical"]
 
-        first_part += vert * coordinates[i]["transversal"]
+        if vertical < draft:
+            coordsBellowDraft.append(value)
+        else:
+            upper = coordinates[key]
+            lower = coordinates[key - 1]
 
-    for key, coord in enumerate(coordinates):
-        trans = coord["transversal"]
-        i = key + 1
+            breadth = (
+                (upper["transversal"] - lower["transversal"])
+                * (draft - lower["vertical"])
+                / (upper["vertical"] - lower["vertical"])
+            ) + lower["transversal"]
 
-        if i > length:
-            i = 0
+            coordsBellowDraft.append({"vertical": draft, "transversal": breadth})
+            coordsBellowDraft.append({"vertical": draft, "transversal": 0})
 
-        second_part += trans * coordinates[i]["vertical"]
+            break
 
-    area = abs(first_part - second_part) / 2
-    return area
+    print(coordsBellowDraft)
+
+    # for key, coord in enumerate(coordsBellowDraft):
+    #     vert = coord["vertical"]
+    #     i = key + 1
+
+    #     if i > length:
+    #         i = 0
+
+    #     first_part += vert * coordsBellowDraft[i]["transversal"]
+
+    # for key, coord in enumerate(coordsBellowDraft):
+    #     trans = coord["transversal"]
+    #     i = key + 1
+
+    #     if i > length:
+    #         i = 0
+
+    #     second_part += trans * coordsBellowDraft[i]["vertical"]
+
+    # area = abs(first_part - second_part) / 2
+
+    return 10

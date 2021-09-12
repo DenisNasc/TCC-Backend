@@ -106,8 +106,8 @@ class CoordinatesApi(Resource):
             args["projectID"] = project_id
             args["stationID"] = station_id
 
+            print(args)
             new_coordinate = CoordinateModel(**args)
-
             db.session.add(new_coordinate)
             db.session.commit()
 

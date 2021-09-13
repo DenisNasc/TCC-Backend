@@ -51,6 +51,7 @@ class HidrostaticsApi(Resource):
             ]
 
             station["coordinates"] = coordinates
+            station["areas"] = []
 
             del station["_sa_instance_state"]
             del station["userID"]
@@ -68,7 +69,7 @@ class HidrostaticsApi(Resource):
 
             area = stationArea(coordinates, draft)
 
-            self.STATIONS["area"] = {"area": area, "draft": draft}
+            self.STATIONS[key]["areas"].append({"area": area, "draft": round(draft, 4)})
 
     def _calculate_moldade_volume(self, draft):
         areas = [x["area"] for x in self.STATIONS]
@@ -88,7 +89,7 @@ class HidrostaticsApi(Resource):
 
             project = ProjectModel.query.filter_by(id=project_id).first()
 
-            self.DRAFTS = np.arange(0, project.draft + 0.05, 0.05)
+            self.DRAFTS = np.arange(1, project.draft + 0.05, 0.05)
 
             stations = (
                 StationModel.query.filter_by(projectID=project_id)
@@ -101,11 +102,7 @@ class HidrostaticsApi(Resource):
             for draft in self.DRAFTS:
                 self._calculate_area(draft)
 
-            # for draft in self.DRAFTS:
-            # print(draft)
-            # self._calculate_moldade_volume(draft)
-
-            # print(self.HIDROSTATICS)
+            print(self.STATIONS)
 
             return {"hidrostatics": self.HIDROSTATICS}, 200
 

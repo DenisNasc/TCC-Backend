@@ -1,10 +1,10 @@
 # RECEBE COMO PARÂMETROS UM ARRAY DE OBJETOS [{"vertical", "transversal"}] COM AS COORDENADAS DE MODO ORDENADO
+import numpy as np
+
+
 def stationArea(coordinates, draft):
     if len(coordinates) == 0:
         return 0
-
-    first_part = 0
-    second_part = 0
 
     coordsBellowDraft = []
 
@@ -17,37 +17,37 @@ def stationArea(coordinates, draft):
             upper = coordinates[key]
             lower = coordinates[key - 1]
 
-            breadth = (
-                (upper["transversal"] - lower["transversal"])
-                * (draft - lower["vertical"])
-                / (upper["vertical"] - lower["vertical"])
-            ) + lower["transversal"]
+            breadth = np.interp(
+                draft,
+                [lower["vertical"], upper["vertical"]],
+                [lower["transversal"], upper["transversal"]],
+            )
 
-            coordsBellowDraft.append({"vertical": draft, "transversal": breadth})
-            coordsBellowDraft.append({"vertical": draft, "transversal": 0})
+            coordsBellowDraft.append(
+                {"vertical": draft, "transversal": breadth, "type": "deck"}
+            )
+            coordsBellowDraft.append(
+                {"vertical": draft, "transversal": 0, "type": "end"}
+            )
 
             break
 
-    print(coordsBellowDraft)
+    coordsBellowDraft.append(coordsBellowDraft[0])
 
-    # for key, coord in enumerate(coordsBellowDraft):
-    #     vert = coord["vertical"]
-    #     i = key + 1
+    area = 0
 
-    #     if i > length:
-    #         i = 0
+    for key in np.arange(len(coordsBellowDraft) - 1):
+        xLower = coordsBellowDraft[key]["transversal"]
+        xUpper = coordsBellowDraft[key + 1]["transversal"]
 
-    #     first_part += vert * coordsBellowDraft[i]["transversal"]
+        yLower = coordsBellowDraft[key]["vertical"]
+        yUpper = coordsBellowDraft[key + 1]["vertical"]
 
-    # for key, coord in enumerate(coordsBellowDraft):
-    #     trans = coord["transversal"]
-    #     i = key + 1
+        part1 = xLower - yUpper
+        part2 = xUpper - yLower
 
-    #     if i > length:
-    #         i = 0
+        area = part1 + part2
 
-    #     second_part += trans * coordsBellowDraft[i]["vertical"]
+    area = abs(area / 2)
 
-    # area = abs(first_part - second_part) / 2
-
-    return 10
+    return round(area, 4)

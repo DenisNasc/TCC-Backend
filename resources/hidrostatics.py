@@ -22,13 +22,32 @@ from .errors import (
 
 db = g.db
 
+hidrostatic_fields = {
+    "draft": fields.Float,
+    "volume": fields.Float,
+    "displacement": fields.Float,
+    "LCB": fields.Float,
+    "VCB": fields.Float,
+    "KMT": fields.Float,
+    "MT1": fields.Float,
+    "LCF": fields.Float,
+    "CB": fields.Float,
+    "CP": fields.Float,
+    "wetedSurface": fields.Float,
+}
+
+response_fields = {
+    "hidrostatics": fields.List(fields.Nested(hidrostatic_fields)),
+    "drafts": fields.List(fields.Float),
+}
+
 
 class HidrostaticsApi(Resource):
     def __init__(self) -> None:
         super().__init__()
         self.DRAFTS = []
         self.STATIONS = []
-        self.HIDROSTATICS = {}
+        self.HIDROSTATICS = {"volumes": []}
 
     def _format_data(self, stations):
         stations = [x.__dict__ for x in stations]
@@ -63,22 +82,30 @@ class HidrostaticsApi(Resource):
 
         self.STATIONS = stations
 
-    def _calculate_area(self, draft):
+    def _calculate_stations_area(self, draft):
         for key, station in enumerate(self.STATIONS):
             coordinates = station["coordinates"]
 
             area = stationArea(coordinates, draft)
 
-            self.STATIONS[key]["areas"].append({"area": area, "draft": round(draft, 4)})
+            self.STATIONS[key]["areas"].append({"area": area, "draft": draft})
 
-    def _calculate_moldade_volume(self, draft):
-        areas = [x["area"] for x in self.STATIONS]
+    def _calculate_volume(self, draft):
         longitudinals = [x["longitudinal"] for x in self.STATIONS]
+        areas = [station["areas"] for station in self.STATIONS]
 
-        volume = integrate.simpson(y=areas, x=longitudinals)
+        areasFormated = []
 
-        self.HIDROSTATICS["MOLDADE_VOLUME"] = volume
+        for value in areas:
+            for area in value:
+                if area["draft"] == draft:
+                    areasFormated.append(area["area"])
 
+        volume = round(integrate.simpson(y=areasFormated, x=longitudinals), 4)
+        self.HIDROSTATICS["volumes"].append({"volume": volume, "draft": draft})
+
+    @jwt_required()
+    @marshal_with(response_fields)
     def get(self, user_id, project_id):
         try:
             if not UserModel.query.filter_by(id=user_id).first():
@@ -89,7 +116,9 @@ class HidrostaticsApi(Resource):
 
             project = ProjectModel.query.filter_by(id=project_id).first()
 
-            self.DRAFTS = np.arange(1, project.draft + 0.05, 0.05)
+            self.DRAFTS = [
+                round(x, 4) for x in np.arange(1, project.draft + 0.05, 0.05)
+            ]
 
             stations = (
                 StationModel.query.filter_by(projectID=project_id)
@@ -100,11 +129,24 @@ class HidrostaticsApi(Resource):
             self._format_data(stations)
 
             for draft in self.DRAFTS:
-                self._calculate_area(draft)
+                self._calculate_stations_area(draft)
 
-            print(self.STATIONS)
+            for draft in self.DRAFTS:
+                self._calculate_volume(draft)
 
-            return {"hidrostatics": self.HIDROSTATICS}, 200
+            # print(self.HIDROSTATICS["volumes"])
+            hidrostatics = []
+
+            for key, draft in enumerate(self.DRAFTS):
+                volume = self.HIDROSTATICS["volumes"][key]["volume"]
+                print(volume)
+
+                hidrostatics.append({"draft": draft, "volume": volume})
+
+            return {
+                "drafts": self.DRAFTS,
+                "hidrostatics": hidrostatics,
+            }, 200
 
         except UserNotFoundError:
             raise UserNotFoundError

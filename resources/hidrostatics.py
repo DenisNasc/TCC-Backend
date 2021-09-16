@@ -47,7 +47,7 @@ class HidrostaticsApi(Resource):
         super().__init__()
         self.DRAFTS = []
         self.STATIONS = []
-        self.HIDROSTATICS = {"volumes": []}
+        self.HIDROSTATICS = {"volumes": [], "displacements": [], "LCBs": []}
 
     def _format_data(self, stations):
         stations = [x.__dict__ for x in stations]
@@ -104,6 +104,37 @@ class HidrostaticsApi(Resource):
         volume = round(integrate.simpson(y=areasFormated, x=longitudinals), 4)
         self.HIDROSTATICS["volumes"].append({"volume": volume, "draft": draft})
 
+    def _calculate_displacement(self, key, draft):
+        volume = self.HIDROSTATICS["volumes"][key]
+        if volume["draft"] == draft:
+            self.HIDROSTATICS["displacements"].append(
+                {"draft": draft, "displacement": round(volume["volume"] * 1.025, 4)}
+            )
+
+    def _calculate_LCB(self, key, draft):
+        longitudinals = [x["longitudinal"] for x in self.STATIONS]
+        volumes = self.HIDROSTATICS["volumes"][key]
+        volume = 0
+
+        if volumes["draft"] == draft:
+            volume = volumes["volume"]
+
+        areasForLCB = []
+        for station in self.STATIONS:
+
+            areas = station["areas"]
+            for area in areas:
+                if area["draft"] == draft:
+                    areasForLCB.append(area["area"])
+
+        soma = []
+        for key, long in enumerate(longitudinals):
+            soma.append(areasForLCB[key] * long)
+
+        LCB = round(integrate.simpson(y=soma, x=longitudinals) / volume, 4)
+        print(draft, LCB)
+        self.HIDROSTATICS["LCBs"].append({"draft": draft, "LCB": LCB})
+
     @jwt_required()
     @marshal_with(response_fields)
     def get(self, user_id, project_id):
@@ -131,17 +162,27 @@ class HidrostaticsApi(Resource):
             for draft in self.DRAFTS:
                 self._calculate_stations_area(draft)
 
-            for draft in self.DRAFTS:
+            for key, draft in enumerate(self.DRAFTS):
                 self._calculate_volume(draft)
+                self._calculate_displacement(key, draft)
+                self._calculate_LCB(key, draft)
 
-            # print(self.HIDROSTATICS["volumes"])
             hidrostatics = []
 
             for key, draft in enumerate(self.DRAFTS):
                 volume = self.HIDROSTATICS["volumes"][key]["volume"]
-                print(volume)
+                displacement = self.HIDROSTATICS["displacements"][key]["displacement"]
+                LCB = self.HIDROSTATICS["LCBs"][key]["LCB"]
+                # ADD AS OUTRAS HIDROSTATICAS AQUI
 
-                hidrostatics.append({"draft": draft, "volume": volume})
+                hidrostatics.append(
+                    {
+                        "draft": draft,
+                        "volume": volume,
+                        "displacement": displacement,
+                        "LCB": LCB,
+                    }
+                )
 
             return {
                 "drafts": self.DRAFTS,

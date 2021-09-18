@@ -1,4 +1,3 @@
-from flask import g
 from flask_restful import Resource, fields, marshal_with
 from flask_jwt_extended import jwt_required
 
@@ -6,12 +5,13 @@ from uuid import uuid4
 
 from services.init_args import init_args
 
-from database.models.users import UserModel
-from database.models.projects import ProjectModel
-from database.models.stations import StationModel
-from database.models.coordinates import CoordinateModel
+from models import db
+from models.users import UserModel
+from models.projects import ProjectModel
+from models.stations import StationModel
+from models.coordinates import CoordinateModel
 
-from .errors import (
+from routes.errors import (
     InternalServerError,
     ProjectNotFoundError,
     StationNotFoundError,
@@ -19,7 +19,6 @@ from .errors import (
     CoordinateNotFoundError,
 )
 
-db = g.db
 
 coordinates_fields = {
     "id": fields.String,

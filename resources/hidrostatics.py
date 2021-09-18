@@ -1,4 +1,3 @@
-from flask import g
 from flask_restful import Resource, fields, marshal_with
 from flask_jwt_extended import jwt_required
 
@@ -7,20 +6,19 @@ import numpy as np
 
 from services.stationArea import stationArea
 
-from database.models.users import UserModel
-from database.models.projects import ProjectModel
-from database.models.stations import StationModel
-from database.models.coordinates import CoordinateModel
+from models import db
+from models.users import UserModel
+from models.projects import ProjectModel
+from models.stations import StationModel
+from models.coordinates import CoordinateModel
 
 
-from .errors import (
+from routes.errors import (
     InternalServerError,
     ProjectNotFoundError,
     UserNotFoundError,
 )
 
-
-db = g.db
 
 hidrostatic_fields = {
     "draft": fields.Float,

@@ -7,7 +7,7 @@ load_dotenv()
 BASEDIR = os.path.abspath(os.path.dirname(__file__))
 
 
-class Config(object):
+class Config:
     CORS_SUPPORTS_CREDENTIALS = True
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -20,6 +20,10 @@ class Config(object):
     JWT_SESSION_COOKIE = False
 
     CSRF_ENABLED = True
+
+    @staticmethod
+    def init_app(app):
+        pass
 
 
 class DevConfig(Config):
@@ -35,9 +39,7 @@ class DevConfig(Config):
 
 class TestConfig(Config):
     ENV = "testing"
-    SQLALCHEMY_DATABASE_URI = (
-        f'sqlite:///{os.path.join(BASEDIR,"database","sqlite","test.sqlite")}'
-    )
+    SQLALCHEMY_DATABASE_URI = "sqlite://"
     DEBUG = True
     TESTING = True
     WTF_CSRF_ENABLED = False
@@ -49,3 +51,11 @@ class ProdConfig(Config):
     SERVER_NAME = os.getenv("SERVER_NAME")
     PORT = os.getenv("PORT")
     CORS_ORIGINS = ""
+
+
+config = {
+    "development": DevConfig,
+    "testing": TestConfig,
+    "production": ProdConfig,
+    "default": DevConfig,
+}

@@ -1,5 +1,5 @@
 import json
-from flask import g, request, jsonify
+from flask import request, jsonify
 from flask_restful import Resource, fields, marshal_with
 from flask_jwt_extended import (
     set_access_cookies,
@@ -8,17 +8,17 @@ from flask_jwt_extended import (
 )
 
 
-from resources.errors import (
+from routes.errors import (
     InternalServerError,
     EmailAlreadyExistsError,
 )
-from database.models.users import UserModel
+
+from models import db
+from models.users import UserModel
 
 from uuid import uuid4
 from services.init_args import init_args
 
-
-db = g.db
 
 response_fields = {"message": fields.String, "userID": fields.String}
 

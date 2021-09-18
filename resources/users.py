@@ -1,20 +1,18 @@
-from flask import g
 from flask_restful import Resource, fields, marshal_with
 from flask_jwt_extended import jwt_required
 
-
 from services.init_args import init_args
 
-from database.models.users import UserModel
+from models import db
+from models.users import UserModel
 
-from .errors import (
+from routes.errors import (
     IncorrectCheckPasswordError,
     UserNotFoundError,
     InternalServerError,
     EmailAlreadyExistsError,
 )
 
-db = g.db
 
 user_fields = {
     "id": fields.String,

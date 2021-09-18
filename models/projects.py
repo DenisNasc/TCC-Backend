@@ -1,7 +1,6 @@
 from datetime import datetime
-from flask import g
 
-db = g.db
+from models import db
 
 
 class ProjectModel(db.Model):

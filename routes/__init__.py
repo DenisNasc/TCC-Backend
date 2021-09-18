@@ -1,13 +1,14 @@
-from .auth import SignupApi
-from .users import UsersApi, UserApi
-from .projects import ProjectsApi, ProjectApi
-from .stations import StationsApi, StationApi
-from .hidrostatics import HidrostaticsApi
+from flask_restful import Api
 
-from .coordinates import CoordinatesApi, CoordinateApi
+from resources.auth import SignupApi
+from resources.users import UsersApi, UserApi
+from resources.projects import ProjectsApi, ProjectApi
+from resources.stations import StationsApi, StationApi
+from resources.coordinates import CoordinatesApi, CoordinateApi
+from resources.hidrostatics import HidrostaticsApi
 
 
-def initialize_routes(api):
+def initialize_routes(api: Api):
     api.add_resource(SignupApi, "/v1/signup")
 
     api.add_resource(UsersApi, "/v1/users")

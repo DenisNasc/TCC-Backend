@@ -33,7 +33,7 @@ python_version = "3.8"
 [scripts]
 sort = "isort ."
 test = "python tests.py"
-start = "python app.py"
+start = "python flasky.py"
 migrate_init = "flask db init"
 migrate = "flask db migrate"
 migrate_up = "flask db upgrade"

@@ -1,7 +1,5 @@
 from datetime import datetime
-from flask import g
-
-db = g.db
+from models import db
 
 
 # /users/<user_id>/projects/<project_id>/stations/<station_id>/coordinates

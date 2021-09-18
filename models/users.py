@@ -1,9 +1,8 @@
 from datetime import datetime
-from flask import g
 from flask_bcrypt import generate_password_hash, check_password_hash
 
+from models import db
 
-db = g.db
 
 # /users/<id>
 class UserModel(db.Model):

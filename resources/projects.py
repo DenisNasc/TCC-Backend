@@ -1,19 +1,16 @@
-from flask import g
 from flask_restful import Resource, fields, marshal_with
 from flask_jwt_extended import jwt_required
-
-import pandas as pd
 
 from uuid import uuid4
 
 from services.init_args import init_args
 from services.stationArea import stationArea
 
-from database.models.users import UserModel
-from database.models.projects import ProjectModel
+from models.users import UserModel
+from models.projects import ProjectModel
 
 
-from .errors import (
+from routes.errors import (
     InternalServerError,
     ProjectNotFoundError,
     UserNotFoundError,
@@ -22,7 +19,6 @@ from .errors import (
 
 from services.delOrParseFloat import delOrParseFloat
 
-db = g.db
 
 project_fields = {
     "id": fields.String,

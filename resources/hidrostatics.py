@@ -4,9 +4,11 @@ from flask_jwt_extended import jwt_required
 from scipy import integrate
 import numpy as np
 
-from services.stationArea import stationArea
+from services.hidrostatics.calculateStationArea import calculateStationArea
+from services.hidrostatics.calculateVolume import calculateVolume
+from services.hidrostatics.calculateWaterlineArea import calculateWaterlineArea
+from services.hidrostatics.calculateVCB import calculateVCB
 
-from models import db
 from models.users import UserModel
 from models.projects import ProjectModel
 from models.stations import StationModel
@@ -24,6 +26,7 @@ hidrostatic_fields = {
     "draft": fields.Float,
     "volume": fields.Float,
     "displacement": fields.Float,
+    "AWL": fields.Float,
     "LCB": fields.Float,
     "VCB": fields.Float,
     "KMT": fields.Float,
@@ -43,53 +46,43 @@ response_fields = {
 class HidrostaticsApi(Resource):
     def __init__(self) -> None:
         super().__init__()
+        self.LONGITUDINALS = []
         self.DRAFTS = []
         self.STATIONS = []
-        self.HIDROSTATICS = {"volumes": [], "displacements": [], "LCBs": []}
+        self.HIDROSTATICS = {
+            "volumes": [],
+            "displacements": [],
+            "LCBs": [],
+            "AWLs": [],
+            "VCBs": [],
+        }
 
-    def _format_data(self, stations):
-        stations = [x.__dict__ for x in stations]
+    def generateDrafts(self, maxDraft: float):
+        self.DRAFTS = [round(x, 4) for x in np.arange(0.05, maxDraft + 0.05, 0.05)]
 
-        for key, station in enumerate(stations):
-            coordinates = (
-                CoordinateModel.query.filter_by(stationID=station["id"])
-                .order_by(CoordinateModel.order)
-                .all()
-            )
-
-            coordinates = [x.__dict__ for x in coordinates]
-            coordinates = [
-                {
-                    "vertical": x["vertical"],
-                    "transversal": x["transversal"],
-                    "type": x["type"],
-                }
-                for x in coordinates
-            ]
-
-            station["coordinates"] = coordinates
-            station["areas"] = []
-
-            del station["_sa_instance_state"]
-            del station["userID"]
-            del station["projectID"]
-            del station["createdAt"]
-            del station["updatedAt"]
-
-            stations[key] = station
+    def handleStationsData(self, stationsDB: list):
+        stations = [
+            {
+                "longitudinal": station.longitudinal,
+                "coordinates": station.coordinates,
+                "areas": [],
+            }
+            for station in stationsDB
+        ]
 
         self.STATIONS = stations
+        self.LONGITUDINALS = [x["longitudinal"] for x in self.STATIONS]
 
-    def _calculate_stations_area(self, draft):
+    def calculateStationsArea(self, draft: float):
         for key, station in enumerate(self.STATIONS):
             coordinates = station["coordinates"]
 
-            area = stationArea(coordinates, draft)
+            area = calculateStationArea(coordinates, draft)
 
             self.STATIONS[key]["areas"].append({"area": area, "draft": draft})
 
-    def _calculate_volume(self, draft):
-        longitudinals = [x["longitudinal"] for x in self.STATIONS]
+    def calculateShipVolume(self, draft):
+        longitudinals = self.LONGITUDINALS
         areas = [station["areas"] for station in self.STATIONS]
 
         areasFormated = []
@@ -99,18 +92,19 @@ class HidrostaticsApi(Resource):
                 if area["draft"] == draft:
                     areasFormated.append(area["area"])
 
-        volume = round(integrate.simpson(y=areasFormated, x=longitudinals), 4)
+        volume = calculateVolume(longitudinals, areasFormated)
+
         self.HIDROSTATICS["volumes"].append({"volume": volume, "draft": draft})
 
-    def _calculate_displacement(self, key, draft):
+    def calculateShipDisplacement(self, key, draft):
         volume = self.HIDROSTATICS["volumes"][key]
         if volume["draft"] == draft:
             self.HIDROSTATICS["displacements"].append(
                 {"draft": draft, "displacement": round(volume["volume"] * 1.025, 4)}
             )
 
-    def _calculate_LCB(self, key, draft):
-        longitudinals = [x["longitudinal"] for x in self.STATIONS]
+    def calculateShipLCB(self, key, draft):
+        longitudinals = self.LONGITUDINALS
         volumes = self.HIDROSTATICS["volumes"][key]
         volume = 0
 
@@ -125,71 +119,80 @@ class HidrostaticsApi(Resource):
                 if area["draft"] == draft:
                     areasForLCB.append(area["area"])
 
-        soma = []
+        moments = []
         for key, long in enumerate(longitudinals):
-            soma.append(areasForLCB[key] * long)
+            moments.append(areasForLCB[key] * long)
 
-        LCB = round(integrate.simpson(y=soma, x=longitudinals) / volume, 4)
-        print(draft, LCB)
+        LCB = round(integrate.simpson(y=moments, x=longitudinals) / volume, 4)
+
         self.HIDROSTATICS["LCBs"].append({"draft": draft, "LCB": LCB})
+
+    def calculateShipAWL(self, draft):
+        waterlineArea = calculateWaterlineArea(self.LONGITUDINALS, self.STATIONS, draft)
+
+        self.HIDROSTATICS["AWLs"].append({"AWL": waterlineArea, "draft": draft})
+
+    def calculateShipVCB(self, key, draft):
+        AWL = self.HIDROSTATICS["AWLs"][key]["AWL"]
+        drafts = self.DRAFTS[0 : key + 1]
+
+        VCB = calculateVCB(drafts, self.STATIONS, AWL)
+
+        self.HIDROSTATICS["VCBs"].append({"draft": draft, "VCB": VCB})
 
     @jwt_required()
     @marshal_with(response_fields)
     def get(self, user_id, project_id):
-        try:
-            if not UserModel.query.filter_by(id=user_id).first():
-                raise UserNotFoundError
 
-            if not ProjectModel.query.filter_by(id=project_id).first():
-                raise ProjectNotFoundError
+        if not UserModel.query.filter_by(id=user_id).first():
+            raise UserNotFoundError
 
-            project = ProjectModel.query.filter_by(id=project_id).first()
+        project = ProjectModel.query.filter_by(id=project_id).first()
+        if not project:
+            raise ProjectNotFoundError
 
-            self.DRAFTS = [
-                round(x, 4) for x in np.arange(1, project.draft + 0.05, 0.05)
-            ]
+        stations = (
+            StationModel.query.filter_by(projectID=project_id)
+            .order_by(StationModel.longitudinal)
+            .all()
+        )
 
-            stations = (
-                StationModel.query.filter_by(projectID=project_id)
-                .order_by(StationModel.longitudinal)
-                .all()
+        self.generateDrafts(project.depth)
+        self.handleStationsData(stations)
+
+        for draft in self.DRAFTS:
+            self.calculateStationsArea(draft)
+
+        for key, draft in enumerate(self.DRAFTS):
+            self.calculateShipVolume(draft)
+            self.calculateShipDisplacement(key, draft)
+            self.calculateShipLCB(key, draft)
+            self.calculateShipAWL(draft)
+            self.calculateShipVCB(key, draft)
+
+        hidrostatics = []
+
+        for key, draft in enumerate(self.DRAFTS):
+            volume = self.HIDROSTATICS["volumes"][key]["volume"]
+            displacement = self.HIDROSTATICS["displacements"][key]["displacement"]
+            LCB = self.HIDROSTATICS["LCBs"][key]["LCB"]
+            AWL = self.HIDROSTATICS["AWLs"][key]["AWL"]
+            VCB = self.HIDROSTATICS["VCBs"][key]["VCB"]
+
+            # ADD AS OUTRAS HIDROSTATICAS AQUI
+
+            hidrostatics.append(
+                {
+                    "draft": draft,
+                    "volume": volume,
+                    "displacement": displacement,
+                    "LCB": LCB,
+                    "AWL": AWL,
+                    "VCB": VCB,
+                }
             )
 
-            self._format_data(stations)
-
-            for draft in self.DRAFTS:
-                self._calculate_stations_area(draft)
-
-            for key, draft in enumerate(self.DRAFTS):
-                self._calculate_volume(draft)
-                self._calculate_displacement(key, draft)
-                self._calculate_LCB(key, draft)
-
-            hidrostatics = []
-
-            for key, draft in enumerate(self.DRAFTS):
-                volume = self.HIDROSTATICS["volumes"][key]["volume"]
-                displacement = self.HIDROSTATICS["displacements"][key]["displacement"]
-                LCB = self.HIDROSTATICS["LCBs"][key]["LCB"]
-                # ADD AS OUTRAS HIDROSTATICAS AQUI
-
-                hidrostatics.append(
-                    {
-                        "draft": draft,
-                        "volume": volume,
-                        "displacement": displacement,
-                        "LCB": LCB,
-                    }
-                )
-
-            return {
-                "drafts": self.DRAFTS,
-                "hidrostatics": hidrostatics,
-            }, 200
-
-        except UserNotFoundError:
-            raise UserNotFoundError
-        except ProjectNotFoundError:
-            raise ProjectNotFoundError
-        except:
-            raise InternalServerError
+        return {
+            "drafts": self.DRAFTS,
+            "hidrostatics": hidrostatics,
+        }, 200

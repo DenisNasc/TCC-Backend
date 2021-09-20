@@ -19,4 +19,4 @@ class CoordinateModel(db.Model):
     updatedAt = db.Column(db.DateTime, onupdate=datetime.now)
 
     def __repr__(self):
-        return f"<Station {self.name}>"
+        return f"<Coordinate X={self.transversal}, Y={self.vertical}>"

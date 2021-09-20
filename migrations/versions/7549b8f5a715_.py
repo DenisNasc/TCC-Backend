@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: 8e3f6686d742
+Revision ID: 7549b8f5a715
 Revises: 
-Create Date: 2021-08-03 23:16:07.495937
+Create Date: 2021-09-18 02:56:39.819865
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '8e3f6686d742'
+revision = '7549b8f5a715'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -36,10 +36,11 @@ def upgrade():
     sa.Column('name', sa.String(length=64), nullable=False),
     sa.Column('engineer', sa.String(length=64), nullable=False),
     sa.Column('shipyard', sa.String(length=64), nullable=True),
-    sa.Column('lengthOverall', sa.Float(precision=4), nullable=True),
-    sa.Column('lengthPerpendiculars', sa.Float(precision=4), nullable=True),
-    sa.Column('breadth', sa.Float(precision=4), nullable=True),
-    sa.Column('draft', sa.Float(precision=4), nullable=True),
+    sa.Column('lengthOverall', sa.Float(precision=4), nullable=False),
+    sa.Column('lengthPerpendiculars', sa.Float(precision=4), nullable=False),
+    sa.Column('breadth', sa.Float(precision=4), nullable=False),
+    sa.Column('draft', sa.Float(precision=4), nullable=False),
+    sa.Column('depth', sa.Float(precision=4), nullable=False),
     sa.Column('createdAt', sa.DateTime(), nullable=False),
     sa.Column('updatedAt', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['userID'], ['users.id'], ),
@@ -51,14 +52,12 @@ def upgrade():
     sa.Column('projectID', sa.Integer(), nullable=False),
     sa.Column('userID', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=64), nullable=False),
-    sa.Column('longitudinal', sa.Float(precision=4), nullable=True),
+    sa.Column('longitudinal', sa.Float(precision=4), nullable=False),
     sa.Column('createdAt', sa.DateTime(), nullable=False),
     sa.Column('updatedAt', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['projectID'], ['projects.id'], ),
     sa.ForeignKeyConstraint(['userID'], ['users.id'], ),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('longitudinal'),
-    sa.UniqueConstraint('name')
+    sa.PrimaryKeyConstraint('id')
     )
     op.create_table('coordinates',
     sa.Column('id', sa.String(length=64), nullable=False),

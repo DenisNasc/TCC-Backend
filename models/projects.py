@@ -14,10 +14,11 @@ class ProjectModel(db.Model):
     engineer = db.Column(db.String(64), nullable=False, unique=False)
     shipyard = db.Column(db.String(64), default="")
 
-    lengthOverall = db.Column(db.Float(precision=4), nullable=True)
-    lengthPerpendiculars = db.Column(db.Float(precision=4), nullable=True)
-    breadth = db.Column(db.Float(precision=4), nullable=True)
-    draft = db.Column(db.Float(precision=4), nullable=True)
+    lengthOverall = db.Column(db.Float(precision=4), nullable=False)
+    lengthPerpendiculars = db.Column(db.Float(precision=4), nullable=False)
+    breadth = db.Column(db.Float(precision=4), nullable=False)
+    draft = db.Column(db.Float(precision=4), nullable=False)
+    depth = db.Column(db.Float(precision=4), nullable=False)
 
     createdAt = db.Column(db.DateTime, nullable=False, default=datetime.now())
     updatedAt = db.Column(db.DateTime, onupdate=datetime.now, default=datetime.now())

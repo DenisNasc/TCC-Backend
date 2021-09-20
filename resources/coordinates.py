@@ -23,6 +23,7 @@ from routes.errors import (
 coordinates_fields = {
     "id": fields.String,
     "stationID": fields.String,
+    "order": fields.Integer,
     "type": fields.String,
     "vertical": fields.Float,
     "transversal": fields.Float,
@@ -105,8 +106,14 @@ class CoordinatesApi(Resource):
             args["projectID"] = project_id
             args["stationID"] = station_id
 
-            print(args)
+            order = CoordinateModel.query.filter_by(stationID=station_id).all()
+            args["order"] = len(order) + 1
+
+            if args["order"] == 1:
+                args["type"] = "start"
+
             new_coordinate = CoordinateModel(**args)
+
             db.session.add(new_coordinate)
             db.session.commit()
 

@@ -4,8 +4,8 @@ from flask_jwt_extended import jwt_required
 from uuid import uuid4
 
 from services.init_args import init_args
-from services.stationArea import stationArea
 
+from models import db
 from models.users import UserModel
 from models.projects import ProjectModel
 
@@ -30,6 +30,7 @@ project_fields = {
     "lengthPerpendiculars": fields.Float,
     "breadth": fields.Float,
     "draft": fields.Float,
+    "depth": fields.Float,
     "createdAt": fields.DateTime,
     "updateddAt": fields.DateTime,
 }
@@ -74,11 +75,12 @@ class ProjectsApi(Resource):
                 "lengthPerpendiculars",
                 "breadth",
                 "draft",
+                "depth",
                 "engineer",
                 "shipyard",
             )
             args = init_args(fields)
-
+            print(args)
             user = UserModel.query.filter_by(id=user_id).first()
 
             if not user:
@@ -95,10 +97,11 @@ class ProjectsApi(Resource):
             if not args["shipyard"]:
                 del args["shipyard"]
 
-            delOrParseFloat(args, "lengthOverall")
-            delOrParseFloat(args, "lengthPerpendiculars")
-            delOrParseFloat(args, "breadth")
-            delOrParseFloat(args, "draft")
+            # delOrParseFloat(args, "lengthOverall")
+            # delOrParseFloat(args, "lengthPerpendiculars")
+            # delOrParseFloat(args, "breadth")
+            # delOrParseFloat(args, "draft")
+            # delOrParseFloat(args, "depth")
 
             args["id"] = str(uuid4())
             args["userID"] = user_id

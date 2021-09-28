@@ -8,6 +8,9 @@ from services.hidrostatics.calculateStationArea import calculateStationArea
 from services.hidrostatics.calculateVolume import calculateVolume
 from services.hidrostatics.calculateWaterlineArea import calculateWaterlineArea
 from services.hidrostatics.calculateVCB import calculateVCB
+from services.hidrostatics.calculateLCF import calculateLCF
+from services.hidrostatics.calculateBM import calculateBM
+from services.hidrostatics.calculateMT1 import calculateMT1
 
 from models.users import UserModel
 from models.projects import ProjectModel
@@ -29,7 +32,7 @@ hidrostatic_fields = {
     "AWL": fields.Float,
     "LCB": fields.Float,
     "VCB": fields.Float,
-    "KMT": fields.Float,
+    "BM": fields.Float,
     "MT1": fields.Float,
     "LCF": fields.Float,
     "CB": fields.Float,
@@ -46,6 +49,7 @@ response_fields = {
 class HidrostaticsApi(Resource):
     def __init__(self) -> None:
         super().__init__()
+        self.LPP = 0
         self.LONGITUDINALS = []
         self.DRAFTS = []
         self.STATIONS = []
@@ -55,6 +59,9 @@ class HidrostaticsApi(Resource):
             "LCBs": [],
             "AWLs": [],
             "VCBs": [],
+            "LCFs": [],
+            "BMs": [],
+            "MT1s": [],
         }
 
     def generateDrafts(self, maxDraft: float):
@@ -133,12 +140,30 @@ class HidrostaticsApi(Resource):
         self.HIDROSTATICS["AWLs"].append({"AWL": waterlineArea, "draft": draft})
 
     def calculateShipVCB(self, key, draft):
-        AWL = self.HIDROSTATICS["AWLs"][key]["AWL"]
         drafts = self.DRAFTS[0 : key + 1]
-
-        VCB = calculateVCB(drafts, self.STATIONS, AWL)
+        AWLs = [value["AWL"] for value in self.HIDROSTATICS["AWLs"][0 : key + 1]]
+        volume = self.HIDROSTATICS["volumes"][key]["volume"]
+        VCB = calculateVCB(drafts, AWLs, volume)
 
         self.HIDROSTATICS["VCBs"].append({"draft": draft, "VCB": VCB})
+
+    def calculateShipLCF(self, key, draft):
+        AWL = self.HIDROSTATICS["AWLs"][key]["AWL"]
+        LCF = calculateLCF(self.LONGITUDINALS, self.STATIONS, draft, AWL)
+
+        self.HIDROSTATICS["LCFs"].append({"LCF": LCF, "draft": draft})
+
+    def calculateShipBM(self, key, draft):
+        volume = self.HIDROSTATICS["volumes"][key]["volume"]
+        BM = calculateBM(self.LONGITUDINALS, self.STATIONS, draft, volume)
+
+        self.HIDROSTATICS["BMs"].append({"BM": BM, "draft": draft})
+
+    def calculateShipMT1(self, key, draft):
+        displacement = self.HIDROSTATICS["displacements"][key]["displacement"]
+        MT1 = calculateMT1(displacement, 1, self.LPP)
+
+        self.HIDROSTATICS["MT1s"].append({"MT1": MT1, "draft": draft})
 
     @jwt_required()
     @marshal_with(response_fields)
@@ -156,8 +181,10 @@ class HidrostaticsApi(Resource):
             .order_by(StationModel.longitudinal)
             .all()
         )
+        self.LPP = project.lengthPerpendiculars
+        maxDraft = project.depth
 
-        self.generateDrafts(project.depth)
+        self.generateDrafts(maxDraft)
         self.handleStationsData(stations)
 
         for draft in self.DRAFTS:
@@ -169,6 +196,9 @@ class HidrostaticsApi(Resource):
             self.calculateShipLCB(key, draft)
             self.calculateShipAWL(draft)
             self.calculateShipVCB(key, draft)
+            self.calculateShipLCF(key, draft)
+            self.calculateShipBM(key, draft)
+            self.calculateShipMT1(key, draft)
 
         hidrostatics = []
 
@@ -178,7 +208,9 @@ class HidrostaticsApi(Resource):
             LCB = self.HIDROSTATICS["LCBs"][key]["LCB"]
             AWL = self.HIDROSTATICS["AWLs"][key]["AWL"]
             VCB = self.HIDROSTATICS["VCBs"][key]["VCB"]
-
+            LCF = self.HIDROSTATICS["LCFs"][key]["LCF"]
+            BM = self.HIDROSTATICS["BMs"][key]["BM"]
+            MT1 = self.HIDROSTATICS["MT1s"][key]["MT1"]
             # ADD AS OUTRAS HIDROSTATICAS AQUI
 
             hidrostatics.append(
@@ -189,6 +221,9 @@ class HidrostaticsApi(Resource):
                     "LCB": LCB,
                     "AWL": AWL,
                     "VCB": VCB,
+                    "LCF": LCF,
+                    "BM": BM,
+                    "MT1": MT1,
                 }
             )
 

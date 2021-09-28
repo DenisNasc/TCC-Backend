@@ -18,10 +18,12 @@ def calculateStationArea(coordinates: list, draft: float) -> float:
         yLower = coordsBellowDraft[key]["vertical"]
         yUpper = coordsBellowDraft[key + 1]["vertical"]
 
-        part1 = xLower - yUpper
-        part2 = xUpper - yLower
+        part1 = xLower * yUpper
+        part2 = xUpper * yLower
 
-        area = part1 + part2
+        area += part1 - part2
 
     area = abs(area)
+    print(draft, area, coordsBellowDraft)
+
     return round(area, 4)

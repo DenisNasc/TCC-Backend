@@ -3,19 +3,11 @@ import numpy as np
 from services.hidrostatics.calculateCoordsBelowDraft import calculateCoordsBelowDraft
 
 
-def calculateVCB(drafts: list, stations: list, AWL: float) -> float:
-
+def calculateVCB(drafts: list, AWLs: list, volume: float) -> float:
     moments = []
+    for key, value in enumerate(drafts):
+        moments.append(AWLs[key] * value)
 
-    coordinates = [e["coordinates"] for e in stations]
-
-    for draft in drafts:
-        coordsBelowDraft = []
-        for coords in coordinates:
-            coordsBelowDraft.append(calculateCoordsBelowDraft(coords, draft))
-
-        halfBreadths = [e[-3]["transversal"] for e in coordsBelowDraft]
-        moments.append(np.round(np.max(halfBreadths) * draft, 4))
-
-    VCB = np.round(integrate.simpson(y=moments, x=drafts) / AWL, 4)
+    VCB = round(integrate.simps(x=drafts, y=moments) / volume, 4)
+    print(moments)
     return VCB

@@ -139,6 +139,8 @@ class CoordinatesApi(Resource):
 
 
 class CoordinateApi(Resource):
+    @jwt_required()
+    @marshal_with(response_fields)
     def get(self, user_id, project_id, station_id, coordinate_id):
         try:
             if not UserModel.query.filter_by(id=user_id).first():
@@ -171,9 +173,11 @@ class CoordinateApi(Resource):
         except:
             raise InternalServerError
 
+    @jwt_required()
+    @marshal_with(response_fields)
     def put(self, user_id, project_id, station_id, coordinate_id):
         try:
-            fields = ("name", "longitudinal")
+            fields = ("vertical", "transversal")
             args = init_args(fields)
 
             if not UserModel.query.filter_by(id=user_id).first():
@@ -190,15 +194,18 @@ class CoordinateApi(Resource):
             if not coordinate:
                 raise CoordinateNotFoundError
 
-            for key, value in args.items():
-                if value:
-                    coordinate[key] = value
-
+            coordinate.vertical = args["vertical"]
+            coordinate.transversal = args["transversal"]
+            print(args)
             db.session.commit()
+
+            coordinates = CoordinateModel.query.filter_by(
+                userID=user_id, projectID=project_id, stationID=station_id
+            ).all()
 
             response = {
                 "message": "Baliza atualizada com sucesso!",
-                "coordinates": coordinate,
+                "coordinates": coordinates,
             }
 
             return response, 200
@@ -215,6 +222,8 @@ class CoordinateApi(Resource):
         except:
             raise InternalServerError
 
+    @jwt_required()
+    @marshal_with(response_fields)
     def delete(self, user_id, project_id, station_id, coordinate_id):
         try:
             if not UserModel.query.filter_by(id=user_id).first():

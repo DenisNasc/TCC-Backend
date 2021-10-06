@@ -23,6 +23,8 @@ python-dotenv = "*"
 flask-testing = "*"
 numpy = "*"
 scipy = "*"
+wheel = "*"
+gunicorn = "*"
 
 [dev-packages]
 black = "*"

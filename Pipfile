@@ -26,6 +26,7 @@ scipy = "*"
 wheel = "*"
 gunicorn = "*"
 psycopg2 = "*"
+flask-script = "*"
 
 [dev-packages]
 black = "*"

@@ -46,11 +46,12 @@ class TestConfig(Config):
 
 
 class ProdConfig(Config):
+    # "postgresql://postgres:postgres@localhost:5432/cars_api"
     SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")
     DEBUG = False
     SERVER_NAME = os.getenv("SERVER_NAME")
     PORT = os.getenv("PORT")
-    CORS_ORIGINS = ""
+    CORS_ORIGINS = "*"
 
 
 config = {

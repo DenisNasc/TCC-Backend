@@ -25,6 +25,7 @@ numpy = "*"
 scipy = "*"
 wheel = "*"
 gunicorn = "*"
+psycopg2 = "*"
 
 [dev-packages]
 black = "*"
